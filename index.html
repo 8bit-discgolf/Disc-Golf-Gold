@@ -31,7 +31,7 @@ small{opacity:.7;text-align:center;max-width:96vw}
 <div id="si"><p>Paste a code that starts with DGG1- to restore your progress.</p><textarea id="io" rows="5" spellcheck="false" placeholder="DGG1-..."></textarea><div class="row"><button id="ld">Load Save Code</button></div><p id="is" class="st"></p></div>
 <div class="row"><button id="cl">Close</button></div></div></div>
 <div id="pad"><div><span></span><button data-k="u">&#9650;</button><span></span><button data-k="l">&#9664;</button><button data-k="d">&#9660;</button><button data-k="r">&#9654;</button></div><button class="ab" data-k="n">&#9834;</button><button class="ab" data-k="m">CARD</button><button class="ab" data-k="b">B</button><button class="ab" data-k="a">A</button></div>
-<small>Arrows / WASD move &middot; Z, Space, Enter = A (talk, search, confirm) &middot; X = B &middot; Esc = pause &middot; Tab or M = badge case &middot; N = music on/off</small>
+<small>Arrows / WASD move &middot; Z, Space, Enter = A (talk, search, confirm) &middot; X = B &middot; Esc = pause &middot; Tab or M = badge case &middot; N = music on/off &middot; SAVE button (top bar) = backup code</small>
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 const R=(x,y,w,h,c)=>{X.fillStyle=c;X.fillRect(Math.round(x),Math.round(y),w,h)};
@@ -41,7 +41,9 @@ const kk=e=>km[e.key.length>1?e.key:e.key.toLowerCase()];
 addEventListener('keydown',e=>{if(OV){if(e.key=='Escape'){e.preventDefault();closeCode()}return}const k=kk(e);if(k){au();if(!K[k])J[k]=1;K[k]=1;e.preventDefault()}});
 addEventListener('keyup',e=>{if(OV)return;const k=kk(e);if(k)K[k]=0});
 document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;b.onpointerdown=e=>{e.preventDefault();au();J[k]=1;K[k]=1};['pointerup','pointerleave','pointercancel'].forEach(v=>b['on'+v]=()=>K[k]=0)});
-C.addEventListener('pointerdown',e=>{au();if(dlg&&!OV){J.a=1;return}const r=C.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*160,y=(e.clientY-r.top)/r.height*144;if(y<11){if(x>128)J.q=1;else if(x>88&&x<114)J.n=1}});
+C.addEventListener('pointerdown',e=>{au();if(OV)return;const r=C.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*160,y=(e.clientY-r.top)/r.height*144;
+if(m=='world'&&y<10&&x>=104&&x<=130){if(!W)hudCode();return}
+if(dlg){J.a=1;return}if(y<11){if(x>131)J.q=1;else if(x>86&&x<104)J.n=1}});
 /* ---------- sfx ---------- */
 function au(){try{if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();initMus()}AC.state=='suspended'&&AC.resume()}catch(e){}}
 function tone(f,d,ty='square',v=.05,t0=0,f2){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+t0;o.type=ty;o.frequency.setValueAtTime(f,t);f2&&o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d)}
@@ -301,6 +303,7 @@ function showTab(t){$('sx').style.display=t=='x'?'':'none';$('si').style.display
 function stat(id,t,ok){const e=$(id);e.textContent=t;e.className='st '+(ok?'ok':'bad')}
 let cpT=0;
 async function genExport(){const xo=$('xo');xo.value='Generating...';stat('xs','',1);let g;if(m=='world'){sOut();g=G}else g=load()||G;const c=await makeCode(g);xo.value=c}
+function hudCode(){if(OV||m!='world')return;const u0=ui,d0=dlg;openCode(()=>{ui=u0;dlg=d0})}
 function openCode(back){OV=1;OVback=back;ui=null;$('ov').classList.add('on');$('io').value='';stat('is','',1);showTab('x');genExport()}
 function closeCode(){OV=0;$('ov').classList.remove('on');K={};J={};const b=OVback;OVback=null;b&&b()}
 $('tbx').onclick=()=>{showTab('x');genExport()};$('tbi').onclick=()=>{showTab('i');$('io').focus()};$('cl').onclick=closeCode;
@@ -379,7 +382,7 @@ if(i==G.w&&m=='world')return say('YOU ARE ALREADY HERE!',()=>wmap(back));travel(
 const rs=()=>{if(H&&ph=='menu')openBag()};
 function restart(){if(H.duel)return quit();H.str=0;H.lie={...H.tee};P.x=H.tee.x;P.y=H.tee.y;th={};SR={};ph='menu';openBag()}
 function quit(){const n=H.n,t=H.tee;H=null;ph='walk';P.x=t.x;P.y=t.y;P.tp=n}
-function pause(){if(H)list('PAUSED',[{t:'RESUME HOLE',fn:rs},{t:'RESTART HOLE',fn:restart},{t:'QUIT TO OVERWORLD',fn:quit}],{cancel:rs});
+function pause(){if(H)list('PAUSED',[{t:'RESUME HOLE',fn:rs},{t:'RESTART HOLE',fn:restart},{t:'SAVE / LOAD CODE',fn:()=>openCode(pause)},{t:'QUIT TO OVERWORLD',fn:quit}],{cancel:rs});
 else list('DISC GOLF GOLD',[{t:'RESUME',fn:()=>{}},{t:'BADGE CASE',fn:()=>{card=1}},{t:'BAG',fn:()=>dl('BAG',G.bag,()=>{},pause)},{t:'WORLD MAP',fn:()=>wmap(pause)},{t:'SAVE GAME',fn:()=>{save();say('GAME SAVED!')}},{t:'SAVE / LOAD CODE',fn:()=>openCode(pause)},{t:'QUIT TO TITLE',fn:()=>{save();title()}}],{cancel:()=>{}})}
 function askPlay(n){const h=HO[n],b=G.best[n-1];say('WOULD YOU LIKE TO PLAY\nHOLE '+n+'? (PAR '+h.par+')\nBEST: '+(b?fmt(b-h.par)+' ('+b+')':'NONE YET'),()=>list('PLAY HOLE '+n+'?',[{t:'YES',fn:()=>{ph='x';wipe(()=>startPlay(n))}},{t:'NO',fn:()=>{ph='walk'}}],{cancel:()=>{ph='walk'}}))}
 /* ---------- overworld interaction ---------- */
@@ -524,10 +527,11 @@ if(H&&(ph=='fly'||ph=='slide'||(ph=='x'&&th.x))){R(th.x-2,th.y,5,2,'rgba(0,0,0,.
 X.restore();ambient();hud()}
 function hud(){R(0,0,160,9,'#000');
 if(H)tx('H'+H.n+' PAR'+H.par+' S'+H.str,2,2,'#fff');else tx(NM[G.w],2,2,'#fff');
-tx('$'+G.coins,H?54:62,2,'#f8d020');tx('#'+(MU.on?'ON':'OFF'),92,2,MU.on?'#80f080':'#909090');
-if(G.buff)tx(G.buff.k=='p'?'PWR':'SCP',114,2,'#f8a040');tx('MENU',134,2,'#80d0ff');
-if(H){const dist=Math.hypot(H.bx-P.x,H.by-P.y),ft=Math.round(dist*2);R(2,11,70,H.atk!=null?24:17,'rgba(0,0,0,.6)');tx('DIST '+ft+'FT/'+Math.round(ft*.3048)+'M',4,13,'#fff');tx('WIND '+(H.wind>0?'>':H.wind<0?'<':'-')+Math.abs(H.wind),4,21,'#80d0ff');
-if(H.atk!=null)tx('GOAL '+H.atk+' OR LESS',4,29,'#f8a040');
+tx('$'+G.coins,H?54:62,2,'#f8d020');tx('#'+(MU.on?'ON':'OFF'),88,2,MU.on?'#80f080':'#909090');
+R(105,0,25,9,'#9898b0');R(106,1,23,7,'#303060');R(106,1,23,1,'#5058a0');tx('SAVE',109,2,'#f8f8f8');tx('MENU',134,2,'#80d0ff');
+const bf=G.buff?(G.buff.k=='p'?'POWER BUFF':'WIND SCOPE'):'';if(bf&&!H)tx(bf,2,11,'#f8a040');
+if(H){const dist=Math.hypot(H.bx-P.x,H.by-P.y),ft=Math.round(dist*2);R(2,11,70,(H.atk!=null?24:17)+(bf?8:0),'rgba(0,0,0,.6)');tx('DIST '+ft+'FT/'+Math.round(ft*.3048)+'M',4,13,'#fff');tx('WIND '+(H.wind>0?'>':H.wind<0?'<':'-')+Math.abs(H.wind),4,21,'#80d0ff');
+if(H.atk!=null)tx('GOAL '+H.atk+' OR LESS',4,29,'#f8a040');if(bf)tx(bf,4,H.atk!=null?37:29,'#f8a040');
 if(MINI){const M=MINI;X.globalAlpha=.82;R(116,10,42,50,'#000');X.drawImage(M.cv,117,11);X.globalAlpha=1;const pt=(x,y)=>[117+M.ox+(x/8-M.x0)*M.s,11+M.oy+(y/8-M.y0)*M.s];
 let[a,b]=pt(H.bx,H.by);const z=2+((fr>>3)&1);R(a-z/2,b-z/2,z+1,z+1,(fr>>4)&1?'#f8d820':'#f04020');[a,b]=pt(H.tee.x,H.tee.y);R(a-1,b-1,2,2,'#c8c8d0');[a,b]=pt(P.x,P.y);if((fr>>3)&1)R(a-1,b-1,3,3,'#fff');else R(a,b,1,1,'#fff')}}
 if(ph=='pow'||ph=='acc'){gbc(10,114,140,26);tx(ph=='pow'?'POWER':'ACCURACY',14,117,'#000');const v=ph=='pow'?th.p:th.m;R(14,126,132,8,'#000');
