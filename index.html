@@ -11,8 +11,25 @@ canvas{image-rendering:pixelated;width:min(96vw,calc((100vh - 120px)*160/144));a
 #pad button{font:bold 12px "Courier New",monospace;border:2px solid var(--bd);background:transparent;color:var(--fg);border-radius:8px;touch-action:none}
 #pad button.ab{width:42px;height:42px;border-radius:50%}
 small{opacity:.7;text-align:center;max-width:96vw}
+#ov{display:none;position:fixed;inset:0;z-index:10;background:rgba(8,12,4,.78);align-items:center;justify-content:center;padding:12px;box-sizing:border-box}
+#ov.on{display:flex}
+#ovb{width:min(520px,100%);max-height:100%;overflow:auto;box-sizing:border-box;background:#f8f8f0;color:#202810;border:4px solid #202810;border-radius:10px;box-shadow:inset 0 0 0 3px #9898b0;padding:14px 16px;font:13px "Courier New",monospace}
+#ovb h2{margin:0 0 10px;font-size:15px;color:#c02020}
+#ovb p{margin:6px 0}
+#ovb textarea{width:100%;box-sizing:border-box;font:13px "Courier New",monospace;border:2px solid #202810;border-radius:6px;padding:6px;background:#fff;color:#202810;word-break:break-all;resize:vertical}
+#ovb .row,#ovb .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+#ovb button{font:bold 13px "Courier New",monospace;border:2px solid #202810;background:#e8e0c8;color:#202810;border-radius:6px;padding:7px 12px;cursor:pointer}
+#ovb button:hover,#ovb button:focus-visible{background:#f8d820;outline:none}
+#ovb .tabs button.on{background:#3050a0;color:#fff}
+#ovb .st{min-height:1.3em;font-weight:bold}
+#ovb .ok{color:#187028}#ovb .bad{color:#c02020}
 </style></head><body>
 <canvas id="c" width="160" height="144"></canvas>
+<div id="ov"><div id="ovb" role="dialog" aria-label="Save and load code"><h2>SAVE / LOAD CODE</h2>
+<div class="tabs"><button id="tbx">EXPORT</button><button id="tbi">IMPORT</button></div>
+<div id="sx"><p>Your save code. Copy it somewhere safe, or download a backup file.</p><textarea id="xo" readonly rows="5" spellcheck="false"></textarea><div class="row"><button id="cp">Copy Code</button><button id="dlb">Download .txt Backup</button></div><p id="xs" class="st"></p></div>
+<div id="si"><p>Paste a code that starts with DGG1- to restore your progress.</p><textarea id="io" rows="5" spellcheck="false" placeholder="DGG1-..."></textarea><div class="row"><button id="ld">Load Save Code</button></div><p id="is" class="st"></p></div>
+<div class="row"><button id="cl">Close</button></div></div></div>
 <div id="pad"><div><span></span><button data-k="u">&#9650;</button><span></span><button data-k="l">&#9664;</button><button data-k="d">&#9660;</button><button data-k="r">&#9654;</button></div><button class="ab" data-k="n">&#9834;</button><button class="ab" data-k="m">CARD</button><button class="ab" data-k="b">B</button><button class="ab" data-k="a">A</button></div>
 <small>Arrows / WASD move &middot; Z, Space, Enter = A (talk, search, confirm) &middot; X = B &middot; Esc = pause &middot; Tab or M = badge case &middot; N = music on/off</small>
 <script>
@@ -21,8 +38,8 @@ const R=(x,y,w,h,c)=>{X.fillStyle=c;X.fillRect(Math.round(x),Math.round(y),w,h)}
 let K={},J={},fr=0,AC;
 const km={ArrowUp:'u',w:'u',ArrowDown:'d',s:'d',ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',z:'a',' ':'a',Enter:'a',x:'b',Escape:'q',p:'q',Tab:'m',m:'m',n:'n'};
 const kk=e=>km[e.key.length>1?e.key:e.key.toLowerCase()];
-addEventListener('keydown',e=>{const k=kk(e);if(k){au();if(!K[k])J[k]=1;K[k]=1;e.preventDefault()}});
-addEventListener('keyup',e=>{const k=kk(e);if(k)K[k]=0});
+addEventListener('keydown',e=>{if(OV){if(e.key=='Escape'){e.preventDefault();closeCode()}return}const k=kk(e);if(k){au();if(!K[k])J[k]=1;K[k]=1;e.preventDefault()}});
+addEventListener('keyup',e=>{if(OV)return;const k=kk(e);if(k)K[k]=0});
 document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;b.onpointerdown=e=>{e.preventDefault();au();J[k]=1;K[k]=1};['pointerup','pointerleave','pointercancel'].forEach(v=>b['on'+v]=()=>K[k]=0)});
 C.addEventListener('pointerdown',e=>{au();const r=C.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*160,y=(e.clientY-r.top)/r.height*144;if(y<11){if(x>128)J.q=1;else if(x>88&&x<114)J.n=1}});
 /* ---------- sfx ---------- */
@@ -185,7 +202,7 @@ function wipe(cb){W={t:0,cb}}
 function dl(title,arr,act,back){if(!arr.length)return say('NOTHING HERE!',back);list(title,arr.map(d=>({t:D[d.id][0]+S3[d.tier],d,i:st(d),fn:()=>act(d)})),{cancel:back})}
 function gbc(x,y,w,h){R(x,y,w,h,'#000');R(x+1,y+1,w-2,h-2,'#f8f8f8');R(x+2,y+2,w-4,h-4,'#9898b0');R(x+3,y+3,w-6,h-6,'#fff')}
 /* ---------- progression ---------- */
-const wTot=i=>{const b=G.W[i].best;return b.every(x=>x)?b.reduce((a,x,j)=>a+x-PAR[j],0):null};
+const wTotOf=(g,i)=>{const b=g.W[i].best;return b.every(x=>x)?b.reduce((a,x,j)=>a+x-PAR[j],0):null},wTot=i=>wTotOf(G,i);
 const cTier=t=>t===null||t>0?0:t==0?1:t>=-4?2:t>=-10?3:4;
 function addTo(i,id){const d={id,tier:0},Wd=G.W[i];(Wd.bag.length<6?Wd.bag:Wd.box).push(d)}
 function grantCarry(i){const n=i+1,got=[];if(n>3)return got;const Wd=G.W[n],t=cTier(wTot(i));if(t>Wd.carry){for(let k=Wd.carry;k<t;k++){addTo(n,CO[n][k]);got.push(CO[n][k])}Wd.carry=t}return got}
@@ -197,8 +214,70 @@ if(!nx.un){nx.un=1;const got=grantCarry(w);SFX.win();say('COURSE COMPLETE! '+f+'
 const got=grantCarry(w);
 if(got.length)say('SCORE '+f+'! NEW CARRYOVER\nDISCS SENT TO '+NM[w+1]+':\n'+nl(got));
 else say('COURSE TOTAL: '+f+'\n'+(nx.carry>=4?'MAX CARRYOVER EARNED!':'IMPROVE IT TO EARN MORE\nCARRYOVER DISCS!'))}
-function travel(i){wipe(()=>{if(m=='world')sOut();sIn(i);gen(i);const Wd=G.W[i],h=HO[1];if(Wd.px==null){Wd.px=h.tx*8;Wd.py=(h.ty+3)*8+4}G.px=Wd.px;G.py=Wd.py;m='world';H=null;MINI=null;ph='walk';SHOP=0;SR={};th={};P={x:Wd.px,y:Wd.py,dir:1,w:0,tp:0};cam.x=P.x-80;cam.y=P.y-72;save();
-if(!Wd.vis){Wd.vis=1;say('WELCOME TO '+NM[i]+'!\nYOUR STARTING BAG:\n'+nl(G.bag.map(d=>d.id)))}else say(NM[i]+'\nEXPLORE FREELY! WALK ONTO\nA TEE PAD TO PLAY A HOLE.')})}
+function travel(i){wipe(()=>{if(m=='world'&&!pendMsg)sOut();sIn(i);gen(i);const Wd=G.W[i],h=HO[1];if(Wd.px!=null&&(solid(TL(Wd.px,Wd.py-1))||solid(TL(Wd.px,Wd.py))))Wd.px=null;if(Wd.px==null){Wd.px=h.tx*8;Wd.py=(h.ty+3)*8+4}G.px=Wd.px;G.py=Wd.py;m='world';H=null;MINI=null;ph='walk';SHOP=0;SR={};th={};P={x:Wd.px,y:Wd.py,dir:1,w:0,tp:0};cam.x=P.x-80;cam.y=P.y-72;save();
+if(pendMsg){const pm=pendMsg;pendMsg=null;say(pm)}else if(!Wd.vis){Wd.vis=1;say('WELCOME TO '+NM[i]+'!\nYOUR STARTING BAG:\n'+nl(G.bag.map(d=>d.id)))}else say(NM[i]+'\nEXPLORE FREELY! WALK ONTO\nA TEE PAD TO PLAY A HOLE.')})}
+/* ---------- save code export / import (DGG1-...) ---------- */
+let pendMsg=null,OV=0,OVback=null;
+const $=id=>document.getElementById(id);
+const b64e=u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const b64d=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u};
+const fnv=s=>{let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(16).padStart(8,'0')};
+async function pipeBytes(u,S,fmt){const st=new Blob([u]).stream().pipeThrough(new S(fmt));return new Uint8Array(await new Response(st).arrayBuffer())}
+/* Save schema v1. The payload holds only permanent progress keyed by string IDs: no (x,y) positions, no tile or map data.
+   Loaded players always spawn at Tee 1 of their saved world, so map changes can never trap them.
+   To change the schema later: bump SAVE_VERSION, add SAVE_MIGRATIONS[oldVersion]=fn(oldData)=>newData, and extend DEFAULT_SAVE. */
+const SAVE_VERSION=1;
+const WORLD_IDS=['new-bark-pines','turkey-creek','arctic-hollow','lava-links'];
+const DKEY=D.map(d=>d[0].toLowerCase()),DID=Object.create(null);DKEY.forEach((k,i)=>DID[k]=i);
+const DEFAULT_SAVE={v:SAVE_VERSION,currentWorld:WORLD_IDS[0],unlockedWorlds:[WORLD_IDS[0]],coins:100,scorecards:{},
+bags:{'new-bark-pines':[{d:'bulba-putt',t:0},{d:'squirt-appr',t:0},{d:'pika-mid',t:0},{d:'dratini-fwy',t:0}]},storage:{},completedEvents:{}};
+const SAVE_MIGRATIONS={};
+const isObj=o=>!!o&&typeof o=='object'&&!Array.isArray(o),clone=o=>JSON.parse(JSON.stringify(o)),ci=(v,a,b,d)=>Number.isInteger(v)&&v>=a&&v<=b?v:d;
+function deepMerge(base,over){const out=clone(base);if(!isObj(over))return out;
+for(const k of Object.keys(over)){if(k=='__proto__'||k=='constructor'||k=='prototype')continue;const sv=over[k],tv=out[k];
+if(isObj(sv)&&(isObj(tv)||tv===undefined))out[k]=deepMerge(isObj(tv)?tv:{},sv);
+else if(tv===undefined||(typeof sv==typeof tv&&Array.isArray(sv)==Array.isArray(tv)&&sv!==null))out[k]=clone(sv)}return out}
+function cleanDiscs(arr,max){const o=[];if(!Array.isArray(arr))return o;for(const e of arr){if(o.length>=max)break;if(!isObj(e)||typeof e.d!='string'||!(e.d in DID))continue;o.push({d:e.d,t:ci(e.t,0,3,0)})}return o}
+function migrateAndValidateSave(p){
+if(!isObj(p)||!Number.isInteger(p.v)||p.v<1)return null;
+if(p.v>SAVE_VERSION){const e=new Error('newer');e.newer=1;throw e}
+let d=p;while(d.v<SAVE_VERSION){const f=SAVE_MIGRATIONS[d.v];if(!f)return null;d=f(d);if(!isObj(d)||!Number.isInteger(d.v))return null}
+const s=deepMerge(DEFAULT_SAVE,d),o={v:SAVE_VERSION,coins:ci(s.coins,0,1e9,DEFAULT_SAVE.coins),currentWorld:'',unlockedWorlds:[],scorecards:{},bags:{},storage:{},completedEvents:{}},unl=Array.isArray(s.unlockedWorlds)?s.unlockedWorlds:[];
+WORLD_IDS.forEach((id,i)=>{if(i==0||unl.includes(id))o.unlockedWorlds.push(id);
+const src=isObj(s.scorecards[id])?s.scorecards[id]:{},sc={};for(let h=1;h<=18;h++){const v=ci(src[h],1,99,0);if(v)sc[h]=v}if(Object.keys(sc).length)o.scorecards[id]=sc;
+const bg=cleanDiscs(s.bags[id],500);o.bags[id]=bg.slice(0,6);o.storage[id]=cleanDiscs(s.storage[id],500).concat(bg.slice(6));
+const ev=Array.isArray(s.completedEvents[id])?s.completedEvents[id].filter(e=>typeof e=='string'&&e.length<40):[];o.completedEvents[id]=[...new Set(ev)].slice(0,100)});
+o.currentWorld=o.unlockedWorlds.includes(s.currentWorld)?s.currentWorld:WORLD_IDS[0];return o}
+function toSave(g){const s={v:SAVE_VERSION,currentWorld:WORLD_IDS[g.w],unlockedWorlds:[],coins:g.coins,scorecards:{},bags:{},storage:{},completedEvents:{}},dk=a=>a.map(d=>({d:DKEY[d.id],t:d.tier}));
+g.W.forEach((x,i)=>{const id=WORLD_IDS[i];if(x.un)s.unlockedWorlds.push(id);const sc={};x.best.forEach((b,j)=>{if(b)sc[j+1]=b});if(Object.keys(sc).length)s.scorecards[id]=sc;s.bags[id]=dk(x.bag);s.storage[id]=dk(x.box);
+const ev=[];[0,1].forEach(qi=>{if(x.q[qi]==3)ev.push('quest-'+qi)});for(let z=0;z<6;z++)if(x.tr[z])ev.push('trade-'+z);Object.keys(x.rb||{}).forEach(n=>ev.push('rival-'+n));s.completedEvents[id]=ev});return s}
+function fromSave(s){const g=fresh();g.coins=s.coins;g.buff=null;g.w=WORLD_IDS.indexOf(s.currentWorld);
+WORLD_IDS.forEach((id,i)=>{const x=g.W[i];x.un=s.unlockedWorlds.includes(id)?1:0;x.vis=x.un;x.px=x.py=null;x.best=Array(18).fill(0);const sc=s.scorecards[id]||{};for(const h in sc)x.best[h-1]=sc[h];
+x.bag=x.un?s.bags[id].map(e=>({id:DID[e.d],tier:e.t})):[];x.box=x.un?s.storage[id].map(e=>({id:DID[e.d],tier:e.t})):[];x.fd=[];x.q=[0,0];x.tr=[];x.rb={};x.carry=0;
+for(const ev of s.completedEvents[id]){let mt;if((mt=/^quest-([01])$/.exec(ev)))x.q[+mt[1]]=3;else if((mt=/^trade-([0-5])$/.exec(ev)))x.tr[+mt[1]]=1;else if((mt=/^rival-(\d+)$/.exec(ev))&&+mt[1]>=1&&+mt[1]<=18)x.rb[+mt[1]]=1}});
+g.W.forEach((x,i)=>{if(!x.un)return;if(i>0)x.carry=cTier(wTotOf(g,i-1));
+if(!x.bag.length){if(x.box.length)x.bag.push(x.box.shift());else if(i==0)x.bag=[0,1,2,10].map(id=>({id,tier:0}));else{for(let k=0;k<Math.max(1,x.carry);k++)x.bag.push({id:CO[i][k],tier:0})}}});
+return g}
+async function makeCode(g){const u=new TextEncoder().encode(JSON.stringify(toSave(g)));let fl='R',bytes=u;
+if(typeof CompressionStream!='undefined'){try{const z=await pipeBytes(u,CompressionStream,'deflate-raw');if(z.length<u.length){fl='Z';bytes=z}}catch(e){}}
+const pre='DGG'+SAVE_VERSION+'-',data=fl+b64e(bytes);return pre+data+fnv(pre+data)}
+async function readCode(str){try{const mt=String(str).match(/DGG(\d+)-([A-Za-z0-9_-]+)/);if(!mt)return{err:'bad'};const ver=+mt[1];if(!(ver>=1))return{err:'bad'};if(ver>SAVE_VERSION)return{err:'newer'};
+const body=mt[2];if(body.length<12)return{err:'bad'};const data=body.slice(0,-8),chk=body.slice(-8).toLowerCase();if(fnv('DGG'+ver+'-'+data)!==chk)return{err:'bad'};
+const fl=data[0];let u=b64d(data.slice(1));if(fl=='Z'){if(typeof DecompressionStream=='undefined')return{err:'bad'};u=await pipeBytes(u,DecompressionStream,'deflate-raw')}else if(fl!='R')return{err:'bad'};
+if(u.length>200000)return{err:'bad'};const s=migrateAndValidateSave(JSON.parse(new TextDecoder().decode(u)));return s?{g:fromSave(s)}:{err:'bad'}}catch(e){return{err:e&&e.newer?'newer':'bad'}}}
+function showTab(t){$('sx').style.display=t=='x'?'':'none';$('si').style.display=t=='i'?'':'none';$('tbx').classList.toggle('on',t=='x');$('tbi').classList.toggle('on',t=='i')}
+function stat(id,t,ok){const e=$(id);e.textContent=t;e.className='st '+(ok?'ok':'bad')}
+let cpT=0;
+async function genExport(){const xo=$('xo');xo.value='Generating...';stat('xs','',1);let g;if(m=='world'){sOut();g=G}else g=load()||G;const c=await makeCode(g);xo.value=c}
+function openCode(back){OV=1;OVback=back;ui=null;$('ov').classList.add('on');$('io').value='';stat('is','',1);showTab('x');genExport()}
+function closeCode(){OV=0;$('ov').classList.remove('on');K={};J={};const b=OVback;OVback=null;b&&b()}
+$('tbx').onclick=()=>{showTab('x');genExport()};$('tbi').onclick=()=>{showTab('i');$('io').focus()};$('cl').onclick=closeCode;
+$('cp').onclick=async()=>{const xo=$('xo');if(!xo.value.startsWith('DGG'))return;let ok=false;try{await navigator.clipboard.writeText(xo.value);ok=true}catch(e){try{xo.focus();xo.select();ok=document.execCommand('copy')}catch(e2){}}
+stat('xs',ok?'Copied to clipboard!':'Copy failed. Select the code and copy it by hand.',ok);clearTimeout(cpT);if(ok)cpT=setTimeout(()=>stat('xs','',1),2500)};
+$('dlb').onclick=()=>{const v=$('xo').value;if(!v.startsWith('DGG'))return;const a=document.createElement('a'),u=URL.createObjectURL(new Blob([v+'\n'],{type:'text/plain'}));a.href=u;a.download='disc-golf-gold-save.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);stat('xs','Backup downloaded!',1)};
+$('ld').onclick=async()=>{const r=await readCode($('io').value);if(!r.g)return stat('is',r.err=='newer'?'This code is from a newer version of the game — refresh the page to update, then try again.':'Invalid Save Code — check that you copied the full text.',0);applyCode(r.g)};
+function applyCode(g){G=g;sIn(G.w);H=null;ph='walk';ui=null;dlg=null;card=0;W=null;SHOP=0;th={};try{localStorage.setItem('dg_gold3',JSON.stringify(G))}catch(e){}
+OVback=null;closeCode();pendMsg='SAVE DATA RESTORED!\nWELCOME BACK!';travel(G.w)}
 /* ---------- play / throwing ---------- */
 function mkMini(h){const w=40,hh=48,cv=document.createElement('canvas');cv.width=w;cv.height=hh;const g=cv.getContext('2d'),x0=Math.min(h.tx,h.bx)-7,x1=Math.max(h.tx,h.bx)+7,y0=Math.min(h.ty,h.by)-6,y1=Math.max(h.ty,h.by)+6,rw=x1-x0+1,rh=y1-y0+1,s=Math.min(w/rw,hh/rh),ox=(w-rw*s)/2,oy=(hh-rh*s)/2;
 const MC={0:TH.fa[0],1:TH.ro,2:TH.k==3?'#807880':TH.k==1?'#d85020':TH.k==2?'#887060':'#0c3c18',3:TH.w0,4:TH.dirt[0],5:'#c8c8d0',6:TH.tgl,7:'#8a5a28',8:'#a04030',9:TH.cliff[0],10:'#a07038',12:'#a04030',13:'#808080',14:TH.ro,15:'#a8e0f8'};
@@ -249,7 +328,7 @@ function pc(){list('BILLS PC',[{t:'DEPOSIT',fn:()=>dl('DEPOSIT',G.bag,d=>{if(G.b
 function sell(){const a=all();list('SELL  $'+G.coins,a.map(d=>{const v=Math.round(D[d.id][7]*(.4+.25*d.tier));return{t:D[d.id][0]+S3[d.tier],d,i:'SELL FOR $'+v,fn:()=>{if(a.length<2||(G.bag.includes(d)&&G.bag.length<2))return say('KEEP 1 DISC!',sell);const i=G.bag.indexOf(d);i>=0?G.bag.splice(i,1):G.box.splice(G.box.indexOf(d),1);G.coins+=v;SFX.coin();say('SOLD FOR $'+v,sell)}}}),{cancel:pc})}
 /* ---------- menus ---------- */
 function title(){m='title';ph='';W=null;H=null;SHOP=0;const s=load();
-list('DISC GOLD',[...(s?[{t:'CONTINUE',fn:()=>{G={...fresh(),...s};sIn(G.w||0);travel(G.w)}}]:[]),{t:'NEW GAME',fn:()=>{G=fresh();sIn(0);travel(0)}},{t:'WORLD MAP',fn:()=>{if(s){G={...fresh(),...s};sIn(G.w||0)}wmap(title)}}])}
+list('DISC GOLD',[...(s?[{t:'CONTINUE',fn:()=>{G={...fresh(),...s};sIn(G.w||0);travel(G.w)}}]:[]),{t:'NEW GAME',fn:()=>{G=fresh();sIn(0);travel(0)}},{t:'WORLD MAP',fn:()=>{if(s){G={...fresh(),...s};sIn(G.w||0)}wmap(title)}},{t:'SAVE / LOAD CODE',fn:()=>openCode(title)}])}
 function wmap(back){list('WORLD MAP',NM.map((n,i)=>({t:(i+1)+' '+n+(G.W[i].un?'':'  LOCKED'),i:G.W[i].un?(G.w==i&&m=='world'?'YOU ARE HERE':'BEST '+(wTot(i)===null?'--':fmt(wTot(i)))):'EVEN PAR IN WORLD '+i,fn:()=>{
 if(!G.W[i].un)return say('LOCKED!\nFINISH ALL 18 HOLES IN\n'+NM[i-1]+' AT\nEVEN PAR OR BETTER.',()=>wmap(back));
 if(i==G.w&&m=='world')return say('YOU ARE ALREADY HERE!',()=>wmap(back));travel(i)}})),{cancel:back})}
@@ -257,7 +336,7 @@ const rs=()=>{if(H&&ph=='menu')openBag()};
 function restart(){if(H.duel)return quit();H.str=0;H.lie={...H.tee};P.x=H.tee.x;P.y=H.tee.y;th={};SR={};ph='menu';openBag()}
 function quit(){const n=H.n,t=H.tee;H=null;ph='walk';P.x=t.x;P.y=t.y;P.tp=n}
 function pause(){if(H)list('PAUSED',[{t:'RESUME HOLE',fn:rs},{t:'RESTART HOLE',fn:restart},{t:'QUIT TO OVERWORLD',fn:quit}],{cancel:rs});
-else list('MENU',[{t:'RESUME',fn:()=>{}},{t:'BADGE CASE',fn:()=>{card=1}},{t:'BAG',fn:()=>dl('BAG',G.bag,()=>{},pause)},{t:'WORLD MAP',fn:()=>wmap(pause)},{t:'SAVE GAME',fn:()=>{save();say('GAME SAVED!')}},{t:'QUIT TO TITLE',fn:()=>{save();title()}}],{cancel:()=>{}})}
+else list('MENU',[{t:'RESUME',fn:()=>{}},{t:'BADGE CASE',fn:()=>{card=1}},{t:'BAG',fn:()=>dl('BAG',G.bag,()=>{},pause)},{t:'WORLD MAP',fn:()=>wmap(pause)},{t:'SAVE GAME',fn:()=>{save();say('GAME SAVED!')}},{t:'SAVE / LOAD CODE',fn:()=>openCode(pause)},{t:'QUIT TO TITLE',fn:()=>{save();title()}}],{cancel:()=>{}})}
 function askPlay(n){const h=HO[n],b=G.best[n-1];say('WOULD YOU LIKE TO PLAY\nHOLE '+n+'? (PAR '+h.par+')\nBEST: '+(b?fmt(b-h.par)+' ('+b+')':'NONE YET'),()=>list('PLAY HOLE '+n+'?',[{t:'YES',fn:()=>{ph='x';wipe(()=>startPlay(n))}},{t:'NO',fn:()=>{ph='walk'}}],{cancel:()=>{ph='walk'}}))}
 /* ---------- overworld interaction ---------- */
 function front(){const v=[[0,1],[0,-1],[-1,0],[1,0]][P.dir];return{x:P.x+v[0]*9,y:P.y-4+v[1]*9}}
@@ -275,7 +354,7 @@ const t=TL(f.x,f.y);if(t==13||t==14)loot(Math.floor(f.y/8)*WW+Math.floor(f.x/8))
 const blk=(x,y)=>[[x-3,y],[x+3,y],[x-3,y-3],[x+3,y-3]].some(([a,b])=>solid(TL(a,b)))||NPCS.some(n=>Math.abs(n.x-x)<7&&Math.abs(n.y-y)<5);
 function mv(sp){let dx=(K.r?1:0)-(K.l?1:0),dy=(K.d?1:0)-(K.u?1:0);if(dx&&dy){dx*=.7;dy*=.7}
 if(dx||dy){P.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?3:2):(dy>0?0:1);P.w++;const nx=P.x+dx*sp,ny=P.y+dy*sp;if(!blk(nx,P.y))P.x=nx;if(!blk(P.x,ny))P.y=ny}else P.w=0}
-function upd(){fr++;if(TO&&--TO.n<=0)TO=null;
+function upd(){fr++;if(OV)return;if(TO&&--TO.n<=0)TO=null;
 if(J.n)togMus();setTrack(m=='title'?'ow':SHOP?'mk':H?'hl':'ow');
 if(W){W.t++;if(W.t==20&&W.cb){const c=W.cb;W.cb=null;c()}if(W.t>=40)W=null;return}
 if(card){if(J.a||J.b||J.m||J.q)card=0;return}
