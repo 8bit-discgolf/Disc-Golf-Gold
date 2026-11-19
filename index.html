@@ -206,7 +206,10 @@ for(let y=by-2;y<=by+2;y++)for(let x=bax-2;x<=bax+2;x++)set(x,y,0);
 HO[n]={n,par,tx:tex,ty,bx:bax,by,up,z,cxf};}}
 if(w==1){const cy=(z,x)=>OY+Math.floor(z/3)*ZH+19+Math.round(Math.sin((x-OX)*.22+z)*2);
 for(let z=0;z<6;z++){const zx=OX+(z%3)*ZW;for(let x=zx;x<zx+ZW;x++){const y0=cy(z,x);for(let k=0;k<3;k++)set(x,y0+k,3)}}
-for(let n=1;n<=18;n++){const h=HO[n],zy=OY+Math.floor(h.z/3)*ZH,bx=h.cxf(zy+19)+3;for(let dx=0;dx<2;dx++){const x=bx+dx,y0=cy(h.z,x);for(let k=-1;k<=3;k++)if(get(x,y0+k)==3)set(x,y0+k,10)}}}
+for(let n=1;n<=18;n++){const h=HO[n],zy=OY+Math.floor(h.z/3)*ZH,bx=h.cxf(zy+19)+3;let top=1e9,bot=-1e9;
+/* walk outward from the creek through ANY connected water (ponds can touch the creek), so the bridge always reaches dry land */
+for(let dx=0;dx<2;dx++){const x=bx+dx,y0=cy(h.z,x);let a=y0,b=y0+2;while(get(x,a-1)==3&&a>y0-16)a--;while(get(x,b+1)==3&&b<y0+18)b++;top=Math.min(top,a);bot=Math.max(bot,b)}
+for(let dx=0;dx<2;dx++){const x=bx+dx;for(let y=top;y<=bot;y++){const t=get(x,y);if(t==3)set(x,y,10);else if(solid(t))set(x,y,4)}for(const y of[top-1,bot+1]){const t=get(x,y);if(t!=10&&t!=5)set(x,y,4)}}}}
 for(let z=0;z<6;z++){const zx=OX+(z%3)*ZW,zy=OY+Math.floor(z/3)*ZH,a=HO[z*3+1],b=HO[z*3+2],c=HO[z*3+3],bx0=zx+ZW-10,by0=zy+2,dx=bx0+2;
 for(let y=zy+1;y<=zy+6;y++)for(let x=bx0-3;x<=bx0+7;x++)if(get(x,y)!=3)set(x,y,1);
 for(let y=0;y<4;y++)for(let x=0;x<5;x++)set(bx0+x,by0+y,8);set(dx,by0+3,12);MK.push({x:bx0,y:by0,z});doors[z]=[dx,by0+4];

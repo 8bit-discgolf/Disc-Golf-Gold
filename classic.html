@@ -5,7 +5,12 @@
 :root[data-theme="dark"]{--bg:#10180c;--fg:#c8e0a0;--bd:#587040}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:12px "Courier New",monospace}
 body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-canvas{image-rendering:pixelated;width:min(96vw,calc((100vh - 120px)*160/144));aspect-ratio:160/144;border:5px solid var(--bd);border-radius:10px;background:#000;touch-action:none}
+#ver{box-sizing:border-box;width:calc(min(96vw,calc((100vh - 150px)*160/144)) + 10px);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 6px 4px 12px;background:var(--bd);color:#f0f0d8;border-radius:10px;font:bold clamp(9px,2.4vw,12px) "Courier New",monospace;letter-spacing:.06em;box-shadow:0 3px 10px rgba(0,0,0,.2);user-select:none;-webkit-user-select:none}
+#ver span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:1px 1px 0 rgba(0,0,0,.45)}
+#ver a{flex:none;white-space:nowrap;color:#f8f8f8;background:linear-gradient(#80b8f8,#4878d8 55%,#2448a0);border:2px solid #d0e4ff;border-radius:7px;padding:3px 9px;text-decoration:none;font:inherit;letter-spacing:.04em;text-shadow:1px 1px 0 #16286a;box-shadow:0 2px 0 rgba(0,0,0,.35)}
+#ver a:hover,#ver a:focus-visible{background:linear-gradient(#a8d0ff,#5c8ce8 55%,#2c54b8);outline:none}
+#ver a:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+canvas{image-rendering:pixelated;width:min(96vw,calc((100vh - 150px)*160/144));aspect-ratio:160/144;border:5px solid var(--bd);border-radius:10px;background:#000;touch-action:none}
 #pad{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;user-select:none;-webkit-user-select:none}
 #pad div{display:grid;grid-template-columns:repeat(3,34px);grid-template-rows:repeat(2,34px);gap:3px}
 #pad button{font:bold 12px "Courier New",monospace;border:2px solid var(--bd);background:transparent;color:var(--fg);border-radius:8px;touch-action:none}
@@ -24,6 +29,7 @@ small{opacity:.7;text-align:center;max-width:96vw}
 #ovb .st{min-height:1.3em;font-weight:bold}
 #ovb .ok{color:#187028}#ovb .bad{color:#c02020}
 </style></head><body>
+<div id="ver" role="navigation" aria-label="Game version"><span>DISC GOLF GOLD &mdash; 8-BIT CLASSIC</span><a href="./index.html" title="Switch to the 32-bit GBA-style edition">PLAY 32-BIT EDITION &#9654;</a></div>
 <canvas id="c" width="160" height="144"></canvas>
 <div id="ov"><div id="ovb" role="dialog" aria-label="Save and load code"><h2>SAVE / LOAD CODE</h2>
 <div class="tabs"><button id="tbx">EXPORT</button><button id="tbi">IMPORT</button></div>
@@ -38,7 +44,7 @@ const R=(x,y,w,h,c)=>{X.fillStyle=c;X.fillRect(Math.round(x),Math.round(y),w,h)}
 let K={},J={},fr=0,AC;
 const km={ArrowUp:'u',w:'u',ArrowDown:'d',s:'d',ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r',z:'a',' ':'a',Enter:'a',x:'b',Escape:'q',p:'q',Tab:'m',m:'m',n:'n',q:'hq',e:'he'};
 const kk=e=>km[e.key.length>1?e.key:e.key.toLowerCase()];
-addEventListener('keydown',e=>{if(OV){if(e.key=='Escape'){e.preventDefault();closeCode()}return}const k=kk(e);if(k){au();if(!K[k])J[k]=1;K[k]=1;e.preventDefault()}});
+addEventListener('keydown',e=>{if(e.target&&e.target.closest&&e.target.closest('#ver'))return;if(OV){if(e.key=='Escape'){e.preventDefault();closeCode()}return}const k=kk(e);if(k){au();if(!K[k])J[k]=1;K[k]=1;e.preventDefault()}});
 addEventListener('keyup',e=>{if(OV)return;const k=kk(e);if(k)K[k]=0});
 document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;b.onpointerdown=e=>{e.preventDefault();au();J[k]=1;K[k]=1};['pointerup','pointerleave','pointercancel'].forEach(v=>b['on'+v]=()=>K[k]=0)});
 C.addEventListener('pointerdown',e=>{au();if(OV)return;const r=C.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*160,y=(e.clientY-r.top)/r.height*144;
@@ -190,7 +196,10 @@ for(let y=by-2;y<=by+2;y++)for(let x=bax-2;x<=bax+2;x++)set(x,y,0);
 HO[n]={n,par,tx:tex,ty,bx:bax,by,up,z,cxf};}}
 if(w==1){const cy=(z,x)=>OY+Math.floor(z/3)*ZH+19+Math.round(Math.sin((x-OX)*.22+z)*2);
 for(let z=0;z<6;z++){const zx=OX+(z%3)*ZW;for(let x=zx;x<zx+ZW;x++){const y0=cy(z,x);for(let k=0;k<3;k++)set(x,y0+k,3)}}
-for(let n=1;n<=18;n++){const h=HO[n],zy=OY+Math.floor(h.z/3)*ZH,bx=h.cxf(zy+19)+3;for(let dx=0;dx<2;dx++){const x=bx+dx,y0=cy(h.z,x);for(let k=-1;k<=3;k++)if(get(x,y0+k)==3)set(x,y0+k,10)}}}
+for(let n=1;n<=18;n++){const h=HO[n],zy=OY+Math.floor(h.z/3)*ZH,bx=h.cxf(zy+19)+3;let top=1e9,bot=-1e9;
+/* walk outward from the creek through ANY connected water (ponds can touch the creek), so the bridge always reaches dry land */
+for(let dx=0;dx<2;dx++){const x=bx+dx,y0=cy(h.z,x);let a=y0,b=y0+2;while(get(x,a-1)==3&&a>y0-16)a--;while(get(x,b+1)==3&&b<y0+18)b++;top=Math.min(top,a);bot=Math.max(bot,b)}
+for(let dx=0;dx<2;dx++){const x=bx+dx;for(let y=top;y<=bot;y++){const t=get(x,y);if(t==3)set(x,y,10);else if(solid(t))set(x,y,4)}for(const y of[top-1,bot+1]){const t=get(x,y);if(t!=10&&t!=5)set(x,y,4)}}}}
 for(let z=0;z<6;z++){const zx=OX+(z%3)*ZW,zy=OY+Math.floor(z/3)*ZH,a=HO[z*3+1],b=HO[z*3+2],c=HO[z*3+3],bx0=zx+ZW-10,by0=zy+2,dx=bx0+2;
 for(let y=zy+1;y<=zy+6;y++)for(let x=bx0-3;x<=bx0+7;x++)if(get(x,y)!=3)set(x,y,1);
 for(let y=0;y<4;y++)for(let x=0;x<5;x++)set(bx0+x,by0+y,8);set(dx,by0+3,12);MK.push({x:bx0,y:by0,z});doors[z]=[dx,by0+4];
